@@ -4,7 +4,7 @@ from scipy.optimize import fsolve
 import constants as const
 
 class Satellite:
-	def __init__(self, i: float = 0, e: float = 0,
+	def __init__(self, name: str ="Taking Control", i: float = 0, e: float = 0,
 	             FoV_hor: float = np.deg2rad(20) , FoV_ver: float =np.deg2rad(10), mass: float =1000, frontal_area: float =2,
 	             Res_spac: float =10, Res_temp: float =1, reference_area: float =4, drag_coefficient: float =1.17,
 				 radiation_reference_area: float =19.76, solar_pressure_coefficient: float =1.2):
@@ -35,9 +35,10 @@ class Satellite:
 		self.mass = mass  # Satellite mass [kg]
 		self.frontal_area = frontal_area  # Frontal area [m^2]
 		
-		self.calc_orbital_parameters()
+		#self.calc_orbital_parameters()
 
 		## Satellite Characteristics
+		self.name = name
 		self.reference_area = reference_area
 		self.drag_coefficient = drag_coefficient
 		self.radiation_reference_area = radiation_reference_area
