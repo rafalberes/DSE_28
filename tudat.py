@@ -36,7 +36,7 @@ class tudat_environment:
         spice.load_standard_kernels()
         
         # Set simulation start and end epochs
-        self.simulation_start_epoch = 0.0
+        self.simulation_start_epoch = 2464328.500000   ## January 1 2035
         self.simulation_end_epoch = constants.JULIAN_DAY
         
         # Define string names for bodies to be created from default.
@@ -58,12 +58,13 @@ class tudat_environment:
     def create_sat(self, sat_object, name: str):
         # Create vehicle objects.
         self.bodies.create_empty_body(name)
-        self.bodies.get(name).mass = sat_object.mass
+        self.bodies.get(name).mass = sat_object
+        print(name, "with a mass of", self.bodies.get(name).mass)
 
     def set_up_aerodynamics(self,
                             sat: str,
-                            reference_area: float = 4.,
-                            drag_coefficient: float = 1.2
+                            reference_area: float, ## Initial vol
+                            drag_coefficient: float  ## Initital drag coefficient
                             ):
         # Create aerodynamic coefficient interface settings, and add to vehicle
         aero_coefficient_settings = environment_setup.aerodynamic_coefficients.constant(
@@ -71,6 +72,7 @@ class tudat_environment:
         )
         environment_setup.add_aerodynamic_coefficient_interface(
             self.bodies, sat, aero_coefficient_settings)
+        print("Aerodynamics of", sat, "reference area of", reference_area, "and drag coefficient of", drag_coefficient)
         
     def set_up_solar_pressure(self,
                               sat: str,
@@ -84,10 +86,12 @@ class tudat_environment:
         )
         environment_setup.add_radiation_pressure_interface(
             self.bodies, sat, radiation_pressure_settings)
+        print("Solar pressure of", sat, " with radiation reference area of", reference_area_radiation, "and radiation pressure coefficient of", radiation_pressure_coefficient)
         
     def propagation_setup(self, sats: list):
         self.bodies_to_propagate = sats
         self.central_bodies = ["Earth"]
+        print("Propagation setup for:", sats)
         
     def set_up_acceleration(self, sats: list):
         # Define accelerations acting on satellite by Sun and Earth.
@@ -102,13 +106,13 @@ class tudat_environment:
             ],
             Moon=[
                 propagation_setup.acceleration.point_mass_gravity()
-            ],
-            Mars=[
-                propagation_setup.acceleration.point_mass_gravity()
-            ],
-            Venus=[
-                propagation_setup.acceleration.point_mass_gravity()
-            ]
+            ] #, ## Removed due to insignificance compared to the others:
+            # Mars=[
+            #     propagation_setup.acceleration.point_mass_gravity()
+            # ],
+            # Venus=[
+            #     propagation_setup.acceleration.point_mass_gravity()
+            # ]
         )
         
         # Create global accelerations settings dictionary.
@@ -122,7 +126,8 @@ class tudat_environment:
             self.acceleration_settings,
             self.bodies_to_propagate,
             self.central_bodies)
-    
+        print("Acceleration setup for:", sats)
+
     def set_up_initial_states(self, sats: list):
         self.initial_states = np.empty((len(sats), 6))
         print(self.initial_states)
@@ -239,4 +244,14 @@ class tudat_environment:
     
 if __name__ == "__main__":
     tudat_env = tudat_environment()
-    
+    # Create satellite;
+    tudat_env.create_sat(1254, "Taking Control") #Dry mass in kg
+    tudat_env.set_up_aerodynamics("Taking Control", 6.59,1.17) #Volume to cube: 16.9m^3-->6.59m^2 with Cd= 1.17 (https://www.engineeringtoolbox.com/drag-coefficient-d_627.html)
+    tudat_env.set_up_solar_pressure("Taking Control",19.76, 1.2) #Radiation reference area: 3*6.95m^2 with Qpr= [0,2] https://www.quora.com/What-are-the-physics-behind-radiation-pressure
+    tudat_env.propagation_setup(["Taking Control"])
+    tudat_env.set_up_acceleration(["Taking Control"])
+
+
+
+
+
