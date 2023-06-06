@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 import constants as const
+import tudat
 
 class Satellite:
 	def __init__(self, name: str ="Taking Control", i: float = 0, e: float = 0,
@@ -19,6 +20,9 @@ class Satellite:
 		self.DeltaL2 = None  # Shift in longitude per orbit due to the J2 effect [rad]
 		self.DeltaL = None  # Total shift in longitude per orbit [rad]
 		self.DeltaO = None  # Spacing in longitude needed of orbits within one earth-repeat orbit [rad]
+		self.omega = np.deg2rad(70)  # Argument of the peri-centre [Rad] NEEDS REVISION
+		self.OMEGA = np.deg2rad(20)  # Longitude of the ascending node [Rad]
+		self.nu = np.deg2rad(45)  # True anomaly, angle from ascending node of where the sat is now [Rad]
 		
 		## Payload characteristics
 		self.FoV_hor = FoV_hor  # Field of view in horizontal direction [Rad]
@@ -122,11 +126,11 @@ class Satellite:
 		
 		self.DeltaL = DeltaL_required
 		
-		e = fsolve(func_e_pos, 0)[0]
+		e = fsolve(func_e_pos, 0.5)[0]
 		print(e)
 		
 		if e < 0:
-			e = fsolve(func_e_neg, 0)[0]
+			e = fsolve(func_e_neg, 0.5)[0]
 			print(e)
 		
 		if e < 0 or e >= 1:
@@ -138,9 +142,24 @@ class Satellite:
 			
 
 if __name__ == "__main__":
-	Sat1 = Satellite(np.deg2rad(70))
+	Sat1 = Satellite(np.deg2rad(80))
 	#print(Sat1.__dict__)
-	Sat1.calc_e_from_DeltaL(np.deg2rad(-23))
+	Sat1.calc_e_from_DeltaL(np.deg2rad(-30))
 	#print(Sat1.__dict__)
 	Sat1.calc_DeltaL(AmountDeltaL=200,precission=5)
+	
+	## tudat
+	Sat1.tudat_env = tudat.tudat_environment()
+	Sat1.tudat_env.create_sat(Sat1, "Sat1")
+	Sat1.tudat_env.set_up_aerodynamics("Sat1")
+	Sat1.tudat_env.set_up_solar_pressure("Sat1")
+	Sat1.tudat_env.propagation_setup(["Sat1"])
+	Sat1.tudat_env.set_up_acceleration(["Sat1"])
+	Sat1.tudat_env.set_up_initial_states(["Sat1"])
+	Sat1.tudat_env.set_initial_state(Sat1, "Sat1", ["Sat1"])
+	Sat1.tudat_env.finalise_initial_states()
+	Sat1.tudat_env.define_vars_to_store("Sat1")
+	Sat1.tudat_env.define_propagator_settings()
+	Sat1.tudat_env.simulate()
+	Sat1.tudat_env.plot_ground_track()
 	
