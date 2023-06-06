@@ -18,7 +18,7 @@ from tudatpy.util import result2array
 
 
 class tudat_environment:
-    def __init__(self):
+    def __init__(self, epochstart):
         self.initial_state = None
         self.time_hours = None
         self.dep_vars_array = None
@@ -36,7 +36,7 @@ class tudat_environment:
         spice.load_standard_kernels()
         
         # Set simulation start and end epochs
-        self.simulation_start_epoch = 2464328.500000   ## January 1 2035
+        self.simulation_start_epoch = epochstart   ## January 1 2035
         self.simulation_end_epoch = constants.JULIAN_DAY
         
         # Define string names for bodies to be created from default.
@@ -58,7 +58,7 @@ class tudat_environment:
     def create_sat(self, sat_object, name: str):
         # Create vehicle objects.
         self.bodies.create_empty_body(name)
-        self.bodies.get(name).mass = sat_object
+        self.bodies.get(name).mass = sat_object.mass
         print(name, "with a mass of", self.bodies.get(name).mass)
 
     def set_up_aerodynamics(self,
@@ -76,8 +76,8 @@ class tudat_environment:
         
     def set_up_solar_pressure(self,
                               sat: str,
-                              reference_area_radiation: float = 4.0,
-                              radiation_pressure_coefficient: float = 1.2
+                              reference_area_radiation: float,
+                              radiation_pressure_coefficient: float
                               ):
         # Create radiation pressure settings, and add to vehicle
         occulting_bodies = ["Earth"]
@@ -241,15 +241,10 @@ class tudat_environment:
         if show_plot:
             plt.show()
     
-    
 if __name__ == "__main__":
     tudat_env = tudat_environment()
-    # Create satellite;
-    tudat_env.create_sat(1254, "Taking Control") #Dry mass in kg
-    tudat_env.set_up_aerodynamics("Taking Control", 6.59,1.17) #Volume to cube: 16.9m^3-->6.59m^2 with Cd= 1.17 (https://www.engineeringtoolbox.com/drag-coefficient-d_627.html)
-    tudat_env.set_up_solar_pressure("Taking Control",19.76, 1.2) #Radiation reference area: 3*6.95m^2 with Qpr= [0,2] https://www.quora.com/What-are-the-physics-behind-radiation-pressure
-    tudat_env.propagation_setup(["Taking Control"])
-    tudat_env.set_up_acceleration(["Taking Control"])
+
+
 
 
 

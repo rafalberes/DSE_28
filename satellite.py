@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 import constants as const
 
-
 class Satellite:
-	def __init__(self, i=0, e=0,
-	             FoV_hor=np.deg2rad(20), FoV_ver=np.deg2rad(10), mass=1000, frontal_area=2,
-	             Res_spac=10, Res_temp=1):
+	def __init__(self, i: float = 0, e: float = 0,
+	             FoV_hor: float = np.deg2rad(20) , FoV_ver: float =np.deg2rad(10), mass: float =1000, frontal_area: float =2,
+	             Res_spac: float =10, Res_temp: float =1, reference_area: float =4, drag_coefficient: float =1.17,
+				 radiation_reference_area: float =19.76, solar_pressure_coefficient: float =1.2):
 		
 		self.T = None  # Orbital period [s]
 		self.r_p = None  # Peri-centre radius [m]
@@ -36,6 +36,12 @@ class Satellite:
 		self.frontal_area = frontal_area  # Frontal area [m^2]
 		
 		self.calc_orbital_parameters()
+
+		## Satellite Characteristics
+		self.reference_area = reference_area
+		self.drag_coefficient = drag_coefficient
+		self.radiation_reference_area = radiation_reference_area
+		self.solar_pressure_coefficient =solar_pressure_coefficient
 	
 	def calc_orbital_parameters(self):
 		self.calc_rp_and_DeltaO()
@@ -68,8 +74,37 @@ class Satellite:
 			self.r_p = r_p_altitude + const.R_E
 			self.DeltaO = np.deg2rad(r_p_altitude * const.m_to_deg)
 	
-	def calc_DeltaL(self):
-		pass
+	def calc_DeltaL(self, AmountDeltaL,precission):
+		## Determine range of DeltaLs:
+		self.DeltaO = 1 * np.pi/180 ## Temporary 1 deg [rad]
+		DeltaLRange = np.arange(1,AmountDeltaL,1)*self.DeltaO
+		DeltaORounded = int(self.DeltaO*10**precission) ## Create integers by scaling OoM
+		print(DeltaORounded)
+		DeltaLRangeRounded = np.arange(1,AmountDeltaL,1)*DeltaORounded # DeltaL = integer * DeltaO
+		#DeltaLRangeRounded = np.deg2rad(np.array([10,20,30,40,60,80]))
+		## Find earth repeat orbit:
+		PiRoundedInt = int(np.pi*2*10**precission) ## 62831 value
+		#print(np.lcm([1,3,5,7],3)) ## As example of functions
+		#DeltaLRangeRounded = int(30/180*np.pi*10**precission)
+		lcm = np.lcm(DeltaLRangeRounded,PiRoundedInt, dtype='int64') * 10 ** (-precission)
+		print(lcm)
+		js = np.divide(lcm,DeltaLRangeRounded)
+		ks = np.divide(lcm,PiRoundedInt)
+		print("js:",js,"ks:",ks)
+		#print(DeltaLRange)
+		#print(js[0]*DeltaLRange[0], ks[0]*2*np.pi) ##Test consistency
+
+	def calc_DeltaL2(self):
+		self.DeltaO = 30*np.pi/180 #1/3 of the 90 degrees covered!
+		self.e = 0
+
+
+
+
+
+
+
+
 	
 	def calc_e_from_DeltaL(self, DeltaL_required):
 		def func_e_pos(e):
@@ -103,7 +138,8 @@ class Satellite:
 
 if __name__ == "__main__":
 	Sat1 = Satellite(np.deg2rad(70))
-	print(Sat1.__dict__)
+	#print(Sat1.__dict__)
 	Sat1.calc_e_from_DeltaL(np.deg2rad(-23))
-	print(Sat1.__dict__)
+	#print(Sat1.__dict__)
+	Sat1.calc_DeltaL(AmountDeltaL=200,precission=5)
 	
