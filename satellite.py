@@ -49,68 +49,69 @@ class Satellite:
 		
 		self.mass = None  # Satellite mass [kg]
 		self.frontal_area = None  # Frontal area [m^2]
-		
+
 		## Satellite Characteristics
 		self.name = None
 		self.reference_area = None
 		self.drag_coefficient = None
 		self.radiation_reference_area = None
 		self.solar_pressure_coefficient = None
-			
-	def save_sat(self, sat_name: str, verbose=True) -> None:
+
+	def save_sat(self, name: str = '', verbose=True) -> None:
 		"""
-		:param n_sat: Satellite number, int: 1 to 3
+		:param name: Name of file to be saved, defaults to 'name' instance attribute of object
 		:param verbose: Bool for printing confirmation/errors
 		"""
 
-		# # check satellite number/s validity
-		# if n_sat in [1, 2, 3, 4, 5, 6]:
-		# 	pass
-		# else:
-		# 	print(f"Invalid satellite number: {n_sat}, save failed")
-		# 	return
+		# set default name
+		if name == '':
+			name = self.name
 
 		# set path to save folder
-		cwd = os.getcwd().replace('\\', '/')			# unix compatibility
-		dir_list = cwd.split('/')						# split directories
+		cwd = os.getcwd().replace('\\', '/')
+		dir_list = cwd.split('/')
 		try:
-			dir_depth = dir_list[::-1].index("DSE_28")	# subdirectories away from "DSE_28"
+			dir_depth = dir_list[::-1].index("DSE_28")
 		except ValueError:
-			print('unable to find DSE_28 parent directory')
+			if verbose:
+				print('unable to find DSE_28 parent directory')
 			return
 
-		filepath = dir_depth * '../' + 'satellites/' + sat_name
+		filepath = dir_depth * '../' + 'satellites'
+		if os.path.isdir(filepath):
+			pass
+		else:
+			os.mkdir(filepath)
+		filepath += '/' + str(name)
 
 		# save satellites
 		with open(filepath, 'wb') as file:
 			pickle.dump(self, file)
 
-		print(f"Saved satellite: {sat_name}")
+		if verbose:
+			print(f"Saved: {name}")
 		return
 
 
-def load_sat(n_sats: int | list[int] | str, verbose=True) -> list | None:
+def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> list | None:
 	"""
-	:param n_sats: Satellite number, int: 1 to 6 OR str: "all"
-	:param verbose: Bool for printing confirmation/errors
-	:return:
+	:param sat_names: File names to be loaded (individual or list), integers automatically preceded with "Sat"
+	:param verbose: Toggle for printing confirmation/errors
+	:return: Satellite class object OR list of multiple
 	"""
 
-	# check satellite number/s validity
-	if type(n_sats) == int:
-		n_sats = [n_sats]
-	elif type(n_sats) == list:
-		for n in n_sats:
-			if n in [1, 2, 3, 4, 5, 6]:
-				pass
-			else:
-				print(f"Invalid satellite number: {n}, save failed")
-				return
-	elif type(n_sats) == str:
-		if n_sats.upper() == "ALL":
-			n_sats = [1, 2, 3, 4, 5, 6]
+	# format name input
+	if type(sat_names) == int:
+		sat_names = ['Sat' + str(sat_names)]
+	elif type(sat_names) == str:
+		sat_names = [sat_names]
+	elif type(sat_names) == list:
+		for n in sat_names:
+			if type(sat_names) == int:
+				sat_names = ['Sat' + str(sat_name) for sat_name in sat_names]
 	else:
-		print("Unknown n_sat input, save failed")
+		if verbose:
+			print("Unknown sat_names input, load failed")
 		return
 
 	# set path to save folder
@@ -119,21 +120,27 @@ def load_sat(n_sats: int | list[int] | str, verbose=True) -> list | None:
 	try:
 		dir_depth = dir_list[::-1].index("DSE_28")  # subdirectories away from "DSE_28"
 	except ValueError:
-		print('unable to find DSE_28 parent directory')
+		if verbose:
+			print('unable to find DSE_28 parent directory')
 		return
 
-	filepath = dir_depth * '../' + 'satellites/sat'
+	filepath = dir_depth * '../' + 'satellites/'
 
 	# load satellites
 	sats = []
-	for n_sat in n_sats:
-		with open(filepath + str(n_sat), 'rb') as file:
-			try:
+	for sat_name in sat_names:
+		try:
+			with open(filepath + str(sat_name), 'rb') as file:
 				sats.append(pickle.load(file))
-			except EOFError:
-				print(f"Could not load sat {n_sat}")
-				n_sats.remove(n_sat)
-	print(f"Loaded satellites: {', '.join(map(str, n_sats))}")
+		except (FileNotFoundError, EOFError):
+			if verbose:
+				print(f"Could not load: {sat_name}")
+			sats.append(None)
+			sat_names.remove(sat_name)
+	if verbose:
+		print(f"Loaded: {', '.join(map(str, sat_names))}")
+	if len(sats) == 1:
+		sats = sats[0]
 
 	return sats
 
@@ -160,7 +167,7 @@ def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float,
 		sat.nu = nu[n]
 		sat.name = f"Sat{n+1}"
 		SATS[n] = sat
-	
+
 	return SATS
 
 
