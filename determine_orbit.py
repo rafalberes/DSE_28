@@ -49,32 +49,35 @@ def determine_orbit():
 	T = 2 * np.pi * np.sqrt(a ** 3 / const.mu_E)
 	
 	nu = np.array([0, 0, 0])
+	
+	DeltaL1 = -4*np.pi ** 2 * np.sqrt(a ** 3 / const.mu_E) / const.T_E
+	DeltaL2 = - (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(i)) / (a ** 2 * (1 - e ** 2) ** 2)
 
-	return N_orbits, N_sat, j, k, DeltaL, a, e, i, r_p, r_a, T, OMEGA, omega, nu
+	return N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu
 
 
-def store_orbital_parameters(Sats, N_orbits, N_sat, j, k, DeltaL, a, e, i, r_p, r_a, T, OMEGA, omega, nu):
+def store_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu):
 	Sats[0].N_orbits = N_orbits
 
 
 def print_orbital_parameters():
-	N_orbits, N_sat, j, k, DeltaL, a, e, i, r_p, r_a, T, OMEGA, omega, nu = determine_orbit()
+	N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu = determine_orbit()
 	print(f"{N_orbits} types of orbits are used that will repeat in {k} days with {N_sat} satellites.\n"
 	      f"In the {k} days, {j} orbits are completed.\n"
 	      f"These orbits have:\n"
-	      f"DeltaL                         : {np.rad2deg(DeltaL)} [Deg]\n"
-	      f"semi-major axis, a             : {a} [m]\n"
-	      f"Eccentricity, e                : {e} [-]\n"
-	      f"Inclination, i                 : {np.rad2deg(i)} [Deg]\n"
-	      f"Peri-centre radius, r_p        : {r_p} [m]\n"
-	      f"                                 {r_p-const.R_E} [m]\n"
-	      f"Apo-centre radius, r_a         : {r_a} [m]\n"
-	      f"                                 {r_a-const.R_E} [m]\n"
-	      f"Orbital period, T              : {T} [s]\n"
-	      f"                                 {T/60} [min]\n"
-	      f"Ascending nodes, OMEGA         : {np.rad2deg(OMEGA)} [Deg]\n"
-	      f"Argument of peri-centre, omega : {np.rad2deg(omega)} [Deg]\n"
-	      f"True anomaly, nu               : {np.rad2deg(nu)} [Deg]"
+	      f"DeltaL                        : {np.rad2deg(DeltaL)} [Deg]\n"
+	      f"semi-major axis, a            : {a} [m]\n"
+	      f"Eccentricity, e               : {e} [-]\n"
+	      f"Inclination, i                : {np.rad2deg(i)} [Deg]\n"
+	      f"Peri-centre radius, r_p       : {r_p} [m]\n"
+	      f"                                {r_p-const.R_E} [m]\n"
+	      f"Apo-centre radius, r_a        : {r_a} [m]\n"
+	      f"                                {r_a-const.R_E} [m]\n"
+	      f"Orbital period, T             : {T} [s]\n"
+	      f"                                {T/60} [min]\n"
+	      f"Ascending nodes, OMEGA        : {np.rad2deg(OMEGA)} [Deg]\n"
+	      f"Argument of peri-centre, omega: {np.rad2deg(omega)} [Deg]\n"
+	      f"True anomaly, nu              : {np.rad2deg(nu)} [Deg]"
 	      )
 		
 

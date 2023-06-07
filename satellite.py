@@ -33,6 +33,10 @@ class Satellite:
 		"""Inclination angle [Rad]"""
 		self.DeltaL: float = None
 		"""Total shift in longitude per orbit [rad]"""
+		self.DeltaL1: float = None
+		"""Shift in longitude per orbit due to rotation of the Earth [Rad]"""
+		self.DeltaL2: float = None
+		"""Shift in longitude per orbit due to J2 effect [Rad]"""
 		self.omega: float = None
 		"""Argument of the peri-centre [Rad] NEEDS REVISION"""
 		self.OMEGA: float = None
@@ -145,7 +149,7 @@ def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> l
 	return sats
 
 
-def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float,
+def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float, DeltaL1: float, DeltaL2: float,
                 a: float, e: float, i: float, r_p: float, r_a: float,
                 T: float, OMEGA: np.ndarray, omega: float, nu: np.ndarray):
 	SATS = np.empty(3, dtype="object")
@@ -156,6 +160,8 @@ def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float,
 		sat.j = j
 		sat.k = k
 		sat.DeltaL = DeltaL
+		sat.DeltaL1 = DeltaL1
+		sat.DeltaL2 = DeltaL2
 		sat.a = a
 		sat.e = e
 		sat.i = i
