@@ -18,7 +18,7 @@ from tudatpy.util import result2array
 
 
 class tudat_environment:
-    def __init__(self, epochstart):
+    def __init__(self, epochstart: int = 2464328.5):
         self.initial_state = None
         self.time_hours = None
         self.dep_vars_array = None
@@ -59,7 +59,6 @@ class tudat_environment:
         # Create vehicle objects.
         self.bodies.create_empty_body(name)
         self.bodies.get(name).mass = sat_object.mass
-        print(name, "with a mass of", self.bodies.get(name).mass)
 
     def set_up_aerodynamics(self,
                             sat: str,
@@ -91,7 +90,6 @@ class tudat_environment:
     def propagation_setup(self, sats: list):
         self.bodies_to_propagate = sats
         self.central_bodies = ["Earth"]
-        print("Propagation setup for:", sats)
         
     def set_up_acceleration(self, sats: list):
         # Define accelerations acting on satellite by Sun and Earth.
@@ -126,11 +124,9 @@ class tudat_environment:
             self.acceleration_settings,
             self.bodies_to_propagate,
             self.central_bodies)
-        print("Acceleration setup for:", sats)
 
     def set_up_initial_states(self, sats: list):
         self.initial_states = np.empty((len(sats), 6))
-        print(self.initial_states)
     
     def set_initial_state(self, sat_object, sat: str, sats: list):
         # Set initial conditions for the satellite that will be
@@ -147,8 +143,7 @@ class tudat_environment:
             longitude_of_ascending_node=sat_object.OMEGA,
             true_anomaly=sat_object.nu,
         )
-        # print("initial state: ", initial_state)
-        #
+        
         self.initial_states[np.where(sats == sat)] = self.initial_state
         
     def finalise_initial_states(self):
@@ -216,7 +211,6 @@ class tudat_environment:
         dep_vars = dynamics_simulator.dependent_variable_history
         self.dep_vars_array = result2array(dep_vars)
         
-        print(self.states_array)
         self.time_hours = self.dep_vars_array[:, 0]/3600
         
     def plot_ground_track(self, show_plot: bool = True):
@@ -241,6 +235,11 @@ class tudat_environment:
         if show_plot:
             plt.show()
     
+
+def set_up_tudat_environment():
+    return tudat_environment()
+
+
 if __name__ == "__main__":
     tudat_env = tudat_environment()
 

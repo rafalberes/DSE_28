@@ -5,51 +5,57 @@ from scipy.optimize import fsolve
 import constants as const
 
 
-def calc_eclipse_time(sat):
+def calc_eclipse_times(sats):
+	eclipse_time = calc_eclipse_time(sats[0])
+	for sat in sats:
+		sat.eclipse_time = eclipse_time
+
+
+def calc_eclipse_time(sat, show: bool = False):
 	OMEGA = sat.OMEGA
 	omega = sat.omega
 	i = sat.i
 	a = sat.a
 	e = sat.e
 	
-	print(OMEGA, omega, i, a, e)
-	
 	n_array = np.arange(0, 366, 1)
-	# n_array = np.array([0])
 	theta = np.linspace(0, 2 * np.pi, 360)
 	
-	l1 = np.cos(OMEGA) * np.cos(omega) - np.sin(OMEGA) * np.sin(omega) * np.cos(i)
-	m1 = np.sin(OMEGA) * np.cos(omega) + np.cos(OMEGA) * np.sin(omega) * np.cos(i)
-	n1 = np.sin(omega) * np.sin(i)
+	OMEGA_array = np.linspace(0, 2 * np.pi, int(sat.j))
+	max_duration_array = np.empty(np.shape(OMEGA_array))
 	
-	l2 = -np.cos(OMEGA) * np.sin(omega) - np.sin(OMEGA) * np.cos(omega) * np.cos(i)
-	m2 = -np.sin(OMEGA) * np.sin(omega) + np.cos(OMEGA) * np.cos(omega) * np.cos(i)
-	n2 = np.cos(omega) * np.sin(i)
-	
-	X_sun, Y_sun, Z_sun = calc_coord_sun(n_array)
-	
-	## Get the time, matching with the theta's
-	time, E = calc_time(a, e, theta)
-	dt = np.diff(time)
-	avg_dt = np.average(dt)
-	dt = np.append(dt, avg_dt)
-	duration_array = np.zeros(np.shape(n_array))
-	
-	for n in n_array:
-		eclipse_array = (n+1) * np.ones(np.shape(theta))
-		a_bar = calc_a_bar(l1, m1, n1, X_sun[n], Y_sun[n], Z_sun[n])
-		b_bar = calc_b_bar(l2, m2, n2, X_sun[n], Y_sun[n], Z_sun[n])
+	for idx, OMEGA in enumerate(OMEGA_array):
+		l1 = np.cos(OMEGA) * np.cos(omega) - np.sin(OMEGA) * np.sin(omega) * np.cos(i)
+		m1 = np.sin(OMEGA) * np.cos(omega) + np.cos(OMEGA) * np.sin(omega) * np.cos(i)
+		n1 = np.sin(omega) * np.sin(i)
 		
-		psi = calc_psi(theta, a_bar, b_bar)
-		S = calc_shadow_function(a, e, theta, a_bar, b_bar)
+		l2 = -np.cos(OMEGA) * np.sin(omega) - np.sin(OMEGA) * np.cos(omega) * np.cos(i)
+		m2 = -np.sin(OMEGA) * np.sin(omega) + np.cos(OMEGA) * np.cos(omega) * np.cos(i)
+		n2 = np.cos(omega) * np.sin(i)
 		
-		eclipse_array[(S > 0)*(psi > .5*np.pi)] = 0
-		duration_array[n] = np.sum(dt[eclipse_array == 0])
-		plt.scatter(time, eclipse_array, s=1, c="yellow")
+		X_sun, Y_sun, Z_sun = calc_coord_sun(n_array)
 	
-	plt.show()
+		## Get the time, matching with the theta's
+		time, E = calc_time(a, e, theta)
+		dt = np.diff(time)
+		avg_dt = np.average(dt)
+		dt = np.append(dt, avg_dt)
+		duration_array = np.zeros(np.shape(n_array))
 	
-	return np.max(duration_array)
+		for n in n_array:
+			eclipse_array = (n+1) * np.ones(np.shape(theta))
+			a_bar = calc_a_bar(l1, m1, n1, X_sun[n], Y_sun[n], Z_sun[n])
+			b_bar = calc_b_bar(l2, m2, n2, X_sun[n], Y_sun[n], Z_sun[n])
+			
+			psi = calc_psi(theta, a_bar, b_bar)
+			S = calc_shadow_function(a, e, theta, a_bar, b_bar)
+			
+			eclipse_array[(S > 0)*(psi > .5*np.pi)] = 0
+			duration_array[n] = np.sum(dt[eclipse_array == 0])
+			
+		max_duration_array[idx] = np.max(duration_array)
+	
+	return np.max(max_duration_array)
 	
 
 def calc_time(a, e, theta_array):
@@ -63,12 +69,6 @@ def calc_time(a, e, theta_array):
 		E_array[idx] = E
 		
 	t = 1 / np.sqrt(const.mu_E / (a**3)) * (E_array - e * np.sin(E_array))
-	
-	# plt.scatter(t/3600, theta_array, s=1)
-	# plt.scatter(t / 3600, E_array, s=1, c="green")
-	# plt.ylabel("theta [Rad]")
-	# plt.xlabel("time [hr]")
-	# plt.show()
 	
 	return t, E_array
 
@@ -108,8 +108,10 @@ def calc_shadow_function(a: float, e: float, theta: np.ndarray, a_bar: float, b_
 
 if __name__ == "__main__":
 	import satellite
-	print(const.e)
-	SAT = satellite.Satellite(const.i, const.e)
-	print(SAT.__dict__)
-	duration_eclipse_max = calc_eclipse_time(SAT)
+	SATS = satellite.load_sat([1, 2, 3])
+	print(SATS[0].__dict__)
+	duration_eclipse_max = calc_eclipse_time(SATS[0])
+	print("Max duration eclipse: ", duration_eclipse_max, "[s]")
+	print("Max duration eclipse: ", duration_eclipse_max/60, "[min]")
+	print("Max duration eclipse: ", duration_eclipse_max / (2*np.pi*np.sqrt(SATS[0].a**3/const.mu_E)), "[%]")
 	

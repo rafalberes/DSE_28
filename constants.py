@@ -9,13 +9,6 @@ AU = 149_597_870.7e3    # [m] https://www.britannica.com/science/astronomical-un
 ## Conversions
 m_to_deg = 1 / 111_139  # Conversion to find longitude/latitude degrees from surface distance https://sciencing.com/convert-latitude-longtitude-feet-2724.html
 
-## Orbital parameters
-j = 14                          # Number of orbits before ground repeat [-]
-k = 1                           # Number of days before ground repeat [-]
-DeltaL = np.deg2rad(25.714)     # Ground track shift per orbit [Rad]
-r_p = 610e3 + R_E               # Peri-centre radius [m]
-a = 870e3 + R_E                 # Semi-major axis [m]
-i = np.deg2rad(82.9)            # Inclination [Rad]
-N = 4                           # Number of satellites in the constellation [-]
-e = 1 - r_p / a                 # Eccentricity [-]
-r_a = a / (1 + e)               # Apo-centre radius [m]
+## Payload
+FoV_PL = np.deg2rad(80)            # Field of view of the chosen payload [Rad]
+Temporal_Res = 1                  # How often measurements are performed [day]
