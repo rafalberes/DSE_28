@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 import constants as const
 import tudat
+import os
+import pickle
 
 class Satellite:
 	def __init__(self, name: str ="Taking Control", i: float = 0, e: float = 0,
@@ -140,6 +142,86 @@ class Satellite:
 			self.e = e
 			self.calc_orbital_parameters()
 			
+	def save_sat(self, n_sat: int, verbose=True) -> None:
+		"""
+		:param n_sat: Satellite number, int: 1 to 6
+		:param verbose: Bool for printing confirmation/errors
+		"""
+
+		# check satellite number/s validity
+		if n_sat in [1, 2, 3, 4, 5, 6]:
+			pass
+		else:
+			print(f"Invalid satellite number: {n_sat}, save failed")
+			return
+
+		# set path to save folder
+		cwd = os.getcwd().replace('\\', '/')			# unix compatibility
+		dir_list = cwd.split('/')						# split directories
+		try:
+			dir_depth = dir_list[::-1].index("DSE_28")	# subdirectories away from "DSE_28"
+		except ValueError:
+			print('unable to find DSE_28 parent directory')
+			return
+
+		filepath = dir_depth * '../' + 'satellites/sat' + str(n_sat)
+
+		# save satellites
+		with open(filepath, 'wb') as file:
+			pickle.dump(self, file)
+
+		print(f"Saved satellite: {n_sat}")
+		return
+
+
+def load_sat(n_sats: int | list[int] | str, verbose=True) -> list | None:
+	"""
+	:param n_sats: Satellite number, int: 1 to 6 OR str: "all"
+	:param verbose: Bool for printing confirmation/errors
+	:return:
+	"""
+
+	# check satellite number/s validity
+	if type(n_sats) == int:
+		n_sats = [n_sats]
+	elif type(n_sats) == list:
+		for n in n_sats:
+			if n in [1, 2, 3, 4, 5, 6]:
+				pass
+			else:
+				print(f"Invalid satellite number: {n}, save failed")
+				return
+	elif type(n_sats) == str:
+		if n_sats.upper() == "ALL":
+			n_sats = [1, 2, 3, 4, 5, 6]
+	else:
+		print("Unknown n_sat input, save failed")
+		return
+
+	# set path to save folder
+	cwd = os.getcwd().replace('\\', '/')  # unix compatibility
+	dir_list = cwd.split('/')  # split directories
+	try:
+		dir_depth = dir_list[::-1].index("DSE_28")  # subdirectories away from "DSE_28"
+	except ValueError:
+		print('unable to find DSE_28 parent directory')
+		return
+
+	filepath = dir_depth * '../' + 'satellites/sat'
+
+	# load satellites
+	sats = []
+	for n_sat in n_sats:
+		with open(filepath + str(n_sat), 'rb') as file:
+			try:
+				sats.append(pickle.load(file))
+			except EOFError:
+				print(f"Could not load sat {n_sat}")
+				n_sats.remove(n_sat)
+	print(f"Loaded satellites: {', '.join(map(str, n_sats))}")
+
+	return n_sats
+
 
 if __name__ == "__main__":
 	Sat1 = Satellite(np.deg2rad(80))
