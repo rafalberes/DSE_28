@@ -57,7 +57,7 @@ class Satellite:
 		self.radiation_reference_area = None
 		self.solar_pressure_coefficient = None
 
-	def save_sat(self, name: str = '', verbose=True) -> None:
+	def save_sat(self, name: str = '', verbose=False) -> None:
 		"""
 		:param name: Name of file to be saved, defaults to 'name' instance attribute of object
 		:param verbose: Bool for printing confirmation/errors
@@ -106,9 +106,9 @@ def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> l
 	elif type(sat_names) == str:
 		sat_names = [sat_names]
 	elif type(sat_names) == list:
-		for n in sat_names:
-			if type(sat_names) == int:
-				sat_names = ['Sat' + str(sat_name) for sat_name in sat_names]
+		for n, name in enumerate(sat_names):
+			if type(name) == int:
+				sat_names[n] = 'Sat' + str(name)
 	else:
 		if verbose:
 			print("Unknown sat_names input, load failed")
