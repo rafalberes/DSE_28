@@ -34,7 +34,7 @@ def determine_orbit():
 		i = np.pi/2
 	else:
 		i = np.arccos(Part1)
-	
+
 	OMEGA = np.arange(0, DeltaL, DeltaL / N_orbits)
 	
 	## Argument of peri-centre
@@ -44,7 +44,7 @@ def determine_orbit():
 	
 	e = 1 - r_p / a
 	r_a = a / (1 + e)
-	
+
 	nu = np.array([0, 0, 0])
 	
 	DeltaL1 = -4*np.pi ** 2 * np.sqrt(a ** 3 / const.mu_E) / const.T_E
@@ -76,4 +76,4 @@ def print_orbital_parameters():
 
 if __name__ == "__main__":
 	print_orbital_parameters()
-	
+	determine_orbit()

@@ -18,7 +18,7 @@ from tudatpy.util import result2array
 
 
 class tudat_environment:
-    def __init__(self, epochstart: int = 2464328.5):
+    def __init__(self, epochstart: float = 0):
         self.initial_state = None
         self.time_hours = None
         self.dep_vars_array = None
@@ -40,7 +40,7 @@ class tudat_environment:
         self.simulation_end_epoch = constants.JULIAN_DAY
         
         # Define string names for bodies to be created from default.
-        self.bodies_to_create = ["Sun", "Earth", "Moon", "Mars", "Venus"]
+        self.bodies_to_create = ["Sun", "Earth", "Moon"] #"Mars", "Venus"
         
         # Use "Earth"/"J2000" as global frame origin and orientation.
         self.global_frame_origin = "Earth"
@@ -71,7 +71,6 @@ class tudat_environment:
         )
         environment_setup.add_aerodynamic_coefficient_interface(
             self.bodies, sat, aero_coefficient_settings)
-        print("Aerodynamics of", sat, "reference area of", reference_area, "and drag coefficient of", drag_coefficient)
         
     def set_up_solar_pressure(self,
                               sat: str,
@@ -85,7 +84,6 @@ class tudat_environment:
         )
         environment_setup.add_radiation_pressure_interface(
             self.bodies, sat, radiation_pressure_settings)
-        print("Solar pressure of", sat, " with radiation reference area of", reference_area_radiation, "and radiation pressure coefficient of", radiation_pressure_coefficient)
         
     def propagation_setup(self, sats: list):
         self.bodies_to_propagate = sats
@@ -94,17 +92,17 @@ class tudat_environment:
     def set_up_acceleration(self, sats: list):
         # Define accelerations acting on satellite by Sun and Earth.
         accelerations_settings = dict(
-            Sun=[
-                propagation_setup.acceleration.cannonball_radiation_pressure(),
-                propagation_setup.acceleration.point_mass_gravity()
-            ],
+            #Sun=[
+                #propagation_setup.acceleration.cannonball_radiation_pressure(),
+            #    propagation_setup.acceleration.point_mass_gravity()
+            #],
             Earth=[
-                propagation_setup.acceleration.spherical_harmonic_gravity(5, 5),
-                propagation_setup.acceleration.aerodynamic()
-            ],
-            Moon=[
-                propagation_setup.acceleration.point_mass_gravity()
-            ] #, ## Removed due to insignificance compared to the others:
+                propagation_setup.acceleration.spherical_harmonic_gravity(1, 5),
+                #propagation_setup.acceleration.aerodynamic()
+            ]#,
+            #Moon=[
+            #    propagation_setup.acceleration.point_mass_gravity()
+            #]#, ## Should be removed due to insignificance compared to the others:
             # Mars=[
             #     propagation_setup.acceleration.point_mass_gravity()
             # ],
@@ -117,7 +115,7 @@ class tudat_environment:
         self.acceleration_settings = {}
         for sat in sats:
             self.acceleration_settings[sat] = accelerations_settings
-        
+
         # Create acceleration models.
         self.acceleration_models = propagation_setup.create_acceleration_models(
             self.bodies,
@@ -143,7 +141,7 @@ class tudat_environment:
             longitude_of_ascending_node=sat_object.OMEGA,
             true_anomaly=sat_object.nu,
         )
-        
+
         self.initial_states[np.where(sats == sat)] = self.initial_state
         
     def finalise_initial_states(self):
@@ -156,27 +154,27 @@ class tudat_environment:
             propagation_setup.dependent_variable.keplerian_state(sat, "Earth"),
             propagation_setup.dependent_variable.latitude(sat, "Earth"),
             propagation_setup.dependent_variable.longitude(sat, "Earth"),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.point_mass_gravity_type, sat, "Sun"
-            ),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.point_mass_gravity_type, sat, "Moon"
-            ),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.point_mass_gravity_type, sat, "Mars"
-            ),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.point_mass_gravity_type, sat, "Venus"
-            ),
+            #propagation_setup.dependent_variable.single_acceleration_norm(
+            #    propagation_setup.acceleration.point_mass_gravity_type, sat, "Sun"
+            #),
+            #propagation_setup.dependent_variable.single_acceleration_norm(
+            #    propagation_setup.acceleration.point_mass_gravity_type, sat, "Moon"
+            #),
+            # propagation_setup.dependent_variable.single_acceleration_norm(
+            #     propagation_setup.acceleration.point_mass_gravity_type, sat, "Mars"
+            # ),
+            # propagation_setup.dependent_variable.single_acceleration_norm(
+            #     propagation_setup.acceleration.point_mass_gravity_type, sat, "Venus"
+            # ),
             propagation_setup.dependent_variable.single_acceleration_norm(
                 propagation_setup.acceleration.spherical_harmonic_gravity_type, sat, "Earth"
-            ),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.aerodynamic_type, sat, "Earth"
-            ),
-            propagation_setup.dependent_variable.single_acceleration_norm(
-                propagation_setup.acceleration.cannonball_radiation_pressure_type, sat, "Sun"
-            )
+            )#,
+            #propagation_setup.dependent_variable.single_acceleration_norm(
+            #    propagation_setup.acceleration.aerodynamic_type, sat, "Earth"
+            #)#,
+            #propagation_setup.dependent_variable.single_acceleration_norm(
+            #    propagation_setup.acceleration.cannonball_radiation_pressure_type, sat, "Sun"
+            #)
         ]
         
     def define_propagator_settings(self):
@@ -184,7 +182,7 @@ class tudat_environment:
         termination_condition = propagation_setup.propagator.time_termination(self.simulation_end_epoch)
         
         # Create numerical integrator settings
-        fixed_step_size = 10.0
+        fixed_step_size = 1.0
         integrator_settings = propagation_setup.integrator.runge_kutta_4(fixed_step_size)
         
         # Create propagation settings
@@ -210,7 +208,7 @@ class tudat_environment:
         self.states_array = result2array(states)
         dep_vars = dynamics_simulator.dependent_variable_history
         self.dep_vars_array = result2array(dep_vars)
-        
+
         self.time_hours = self.dep_vars_array[:, 0]/3600
         
     def plot_ground_track(self, show_plot: bool = True):
@@ -219,16 +217,16 @@ class tudat_environment:
         longitude = self.dep_vars_array[:, 11]
         hours = 24
         subset = int(len(self.time_hours) / 24 * hours)
-        latitude = np.rad2deg(latitude)
-        longitude = np.rad2deg(longitude)
+        latitude = np.rad2deg(latitude)[:subset]
+        longitude = np.rad2deg(longitude)[:subset]
         plt.figure(figsize=(9, 5))
-        plt.title("24 hour ground track of Delfi-C3")
-        plt.scatter(longitude, latitude, s=1)
+        plt.title("Ground track of satellite over 1 days")
+        plt.scatter(longitude, latitude,s=1)
         plt.xlabel('Longitude [deg]')
         plt.ylabel('Latitude [deg]')
         plt.xlim([min(longitude), max(longitude)])
-        plt.yticks(np.arange(-90, 91, step=45))
-        plt.yticks(np.arange(-90, 91, step=45))
+        plt.yticks(np.arange(-91, 91, step=45))
+        plt.yticks(np.arange(-91, 91, step=45))
         plt.grid()
         plt.tight_layout()
         

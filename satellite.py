@@ -46,6 +46,8 @@ class Satellite:
 		"""True anomaly, angle from peri-centre of where the sat is now (starting point) [Rad]"""
 		self.eclipse_time: float = None
 		"""Maximum eclipse time during orbit [s]"""
+		self.rho: float = None
+		""""The mean density of the orbit [kg/m^3]"""
 		## Payload characteristics
 		self.FoV_PL = None  # FoV of the payload [Rad]
 		
@@ -56,11 +58,16 @@ class Satellite:
 		self.frontal_area = None  # Frontal area [m^2]
 
 		## Satellite Characteristics
-		self.name = None
-		self.reference_area = None
-		self.drag_coefficient = None
-		self.radiation_reference_area = None
+		self.name: str = None
+		"""Name of the satellite"""
+		self.reference_area: float = None
+		"""Reference area of satellite's cross-section [m^2]"""
+		self.drag_coefficient: float = None
+		""""Drag coefficient of the satellite [-]"""
+		self.radiation_reference_area: float = None
+		""""Reference area of half the satellite's total area [m^2]"""
 		self.solar_pressure_coefficient = None
+		""""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
 
 	def save_sat(self, name: str = '', verbose=False) -> None:
 		"""
