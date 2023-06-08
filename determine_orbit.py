@@ -24,17 +24,16 @@ def determine_orbit():
 	
 	r_p = r_p_alt + const.R_E
 	
-	arange = np.arange(r_p, r_p + 2000e3, 10000)
+	T = const.T_E * k / j
+	a = ((T/(2*np.pi))**2 * const.mu_E)**(1/3)
 	
-	results = np.array([[0, 0, 0, 0]])
-	
-	for a in arange:
-		Part1 = ((-1) * k / j * 2 * np.pi + 2 * np.pi * 2 * np.pi * np.sqrt(a ** 3 / const.mu_E) / const.T_E)
-		Part2 = (-a ** 2 * (1 - (1 - r_p / a) ** 2) ** 2 / (3 * np.pi * const.J_2 * const.R_E ** 2))
-		i = np.arccos(Part1 * Part2)
-		results = np.append(results, [[k, j, a, i]], axis=0)
-	
-	k, j, a, i = results[np.where(results[:, 3] > np.deg2rad(80))[0][0]]
+	Part1 = ((-1) * k / j * 2 * np.pi + 2 * np.pi * 2 * np.pi * np.sqrt(a ** 3 / const.mu_E) / const.T_E) * \
+	        (-a ** 2 * (1 - (1 - r_p / a) ** 2) ** 2 / (3 * np.pi * const.J_2 * const.R_E ** 2))
+
+	if np.abs(Part1) < 1e-10:
+		i = np.pi/2
+	else:
+		i = np.arccos(Part1)
 	
 	OMEGA = np.arange(0, DeltaL, DeltaL / N_orbits)
 	
@@ -46,18 +45,12 @@ def determine_orbit():
 	e = 1 - r_p / a
 	r_a = a / (1 + e)
 	
-	T = 2 * np.pi * np.sqrt(a ** 3 / const.mu_E)
-	
 	nu = np.array([0, 0, 0])
 	
 	DeltaL1 = -4*np.pi ** 2 * np.sqrt(a ** 3 / const.mu_E) / const.T_E
 	DeltaL2 = - (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(i)) / (a ** 2 * (1 - e ** 2) ** 2)
 
 	return N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu
-
-
-def store_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu):
-	Sats[0].N_orbits = N_orbits
 
 
 def print_orbital_parameters():
