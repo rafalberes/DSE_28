@@ -5,6 +5,7 @@ import constants as const
 import tudat
 import os
 import pickle
+import csv
 
 
 class Satellite:
@@ -85,8 +86,13 @@ class Satellite:
 		filepath += '/' + str(name)
 
 		# save satellites
-		with open(filepath, 'wb') as file:
+		with open(filepath + '.pkl', 'wb') as file:
 			pickle.dump(self, file)
+
+		with open(filepath + '.csv', 'w') as csv_file:
+			writer = csv.writer(csv_file)
+			for key, value in self.__dict__.items():
+				writer.writerow([key, value])
 
 		if verbose:
 			print(f"Saved: {name}")
@@ -102,13 +108,16 @@ def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> l
 
 	# format name input
 	if type(sat_names) == int:
-		sat_names = ['Sat' + str(sat_names)]
+		sat_names = ['Sat' + str(sat_names) + '.pkl']
 	elif type(sat_names) == str:
-		sat_names = [sat_names]
+		if sat_names[-4:] == '.pkl':
+			sat_names = [sat_names]
+		else:
+			sat_names = [sat_names + '.pkl']
 	elif type(sat_names) == list:
 		for n, name in enumerate(sat_names):
 			if type(name) == int:
-				sat_names[n] = 'Sat' + str(name)
+				sat_names[n] = 'Sat' + str(name) + '.pkl'
 	else:
 		if verbose:
 			print("Unknown sat_names input, load failed")
