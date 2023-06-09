@@ -16,6 +16,8 @@ from tudatpy.kernel.astro import element_conversion
 from tudatpy.kernel import constants
 from tudatpy.util import result2array
 
+import satellite
+
 
 class tudat_environment:
     def __init__(self, epochstart: float = 0):
@@ -208,38 +210,67 @@ class tudat_environment:
         self.states_array = result2array(states)
         dep_vars = dynamics_simulator.dependent_variable_history
         self.dep_vars_array = result2array(dep_vars)
-
+        
         self.time_hours = self.dep_vars_array[:, 0]/3600
         
-    def plot_ground_track(self, show_plot: bool = True):
-        # Plot ground track for a period of 24 hours
-        latitude = self.dep_vars_array[:, 10]
-        longitude = self.dep_vars_array[:, 11]
-        hours = 24
-        subset = int(len(self.time_hours) / 24 * hours)
-        latitude = np.rad2deg(latitude)[:subset]
-        longitude = np.rad2deg(longitude)[:subset]
-        plt.figure(figsize=(9, 5))
-        plt.title("Ground track of satellite over 1 days")
-        plt.scatter(longitude, latitude,s=1)
-        plt.xlabel('Longitude [deg]')
-        plt.ylabel('Latitude [deg]')
-        plt.xlim([min(longitude), max(longitude)])
-        plt.yticks(np.arange(-91, 91, step=45))
-        plt.yticks(np.arange(-91, 91, step=45))
-        plt.grid()
-        plt.tight_layout()
+    def plot_ground_track(self, sat_objects: list | np.ndarray, show_plot: bool = True, subset: int | None = None):
+        for sat in sat_objects:
+            if subset is None:
+                latitude = np.rad2deg(self.dep_vars_array[:, 10]) + np.rad2deg(sat.OMEGA)
+                longitude = np.rad2deg(self.dep_vars_array[:, 11])
+            else:
+                latitude = np.rad2deg(self.dep_vars_array[:, 10])[:subset] + np.rad2deg(sat.OMEGA)
+                longitude = np.rad2deg(self.dep_vars_array[:, 11])[:subset]
+
+            plt.scatter(longitude, latitude, s=1)
         
         if show_plot:
             plt.show()
+        
+    def create_plot(self, hours: float | int | None = None):
+        if hours is None:
+            subset = None
+        else:
+            subset = int(len(self.time_hours) / 24 * hours)
+        plt.figure(figsize=(9, 5))
+        plt.title(f"Ground track of satellite over {hours} hours")
+        plt.xlabel('Longitude [deg]')
+        plt.ylabel('Latitude [deg]')
+        
+        plt.yticks(np.arange(-91, 91, step=45))
+        plt.xlim([-180, 180])
+        plt.grid()
+        plt.tight_layout()
+        
+        return subset
+
+
+def set_up_and_run_tudat(sat_objects):
+    sat1 = sat_objects[0]
+    tudat_env = tudat_environment()
+    tudat_env.create_sat(sat1, sat1.name)
+    tudat_env.set_up_aerodynamics(sat1.name, sat1.reference_area, sat1.drag_coefficient)
+    tudat_env.set_up_solar_pressure(sat1.name, sat1.radiation_reference_area, sat1.solar_pressure_coefficient)
+    tudat_env.propagation_setup([sat1.name])
+    tudat_env.set_up_acceleration([sat1.name])
+    tudat_env.set_up_initial_states([sat1.name])
+    tudat_env.set_initial_state(sat1, sat1.name, [sat1.name])
+    tudat_env.finalise_initial_states()
+    tudat_env.define_vars_to_store(sat1.name)
+    tudat_env.define_propagator_settings()
+    tudat_env.simulate()
+    return tudat_env
     
 
-def set_up_tudat_environment():
-    return tudat_environment()
-
-
 if __name__ == "__main__":
-    tudat_env = tudat_environment()
+    sat = satellite.load_sat(1)
+    sat.reference_area = 2
+    sat.drag_coefficient = 1
+    sat.radiation_reference_area = 3
+    sat.solar_pressure_coefficient = 0.5
+    sat.mass = 1000
+    print(sat.__dict__)
+    tudat_env = set_up_and_run_tudat([sat])
 
 
 

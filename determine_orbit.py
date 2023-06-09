@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import fsolve
 import constants as const
+import satellite
+import tudat
 
 
 def determine_orbit():
@@ -38,17 +40,24 @@ def determine_orbit():
 	OMEGA = np.arange(0, DeltaL, DeltaL / N_orbits)
 	
 	## Argument of peri-centre
-	lat = np.deg2rad(70)
+	lat = np.deg2rad(50)
 	# Sketchy source: https://physics.stackexchange.com/questions/47094/convert-latitude-of-lowest-altitude-to-argument-of-perigee
 	omega = np.arcsin((np.sin(lat))/(np.sin(i)))
 	
 	e = 1 - r_p / a
-	r_a = a / (1 + e)
+	r_a = a * (1 + e)
 
 	nu = np.array([0, 0, 0])
 	
 	DeltaL1 = -4*np.pi ** 2 * np.sqrt(a ** 3 / const.mu_E) / const.T_E
 	DeltaL2 = - (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(i)) / (a ** 2 * (1 - e ** 2) ** 2)
+	
+	r_40_lat = (a*(1-e**2))/(1+e*np.cos(np.deg2rad(50)))
+	r = 800e3+const.R_E
+	theta_r = np.arccos((a*(1-e**2)/r - 1)/e)
+	print("Altitude at 40 deg latitude:", r_40_lat-const.R_E, "[m]")
+	print("True anomaly where alt is 800 km:", np.rad2deg(theta_r), "[deg]")
+	print("Latitude where alt is 800 km:", 90-np.rad2deg(theta_r), "[deg]")
 
 	return N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu
 
@@ -73,7 +82,58 @@ def print_orbital_parameters():
 	      f"True anomaly, nu              : {np.rad2deg(nu)} [Deg]"
 	      )
 		
+		
+def coverage(tudat_env, sats):
+	subset = tudat_env.create_plot(hours=12)#sats[0].T*7/3600)
+	for sat in sats:
+		print(sat)
+
+		if subset is None:
+			latitude = np.rad2deg(tudat_env.dep_vars_array[:, 10])[::10]
+			longitude = np.rad2deg(tudat_env.dep_vars_array[:, 11])[::10] + np.rad2deg(sat.OMEGA)
+		else:
+			latitude = np.rad2deg(tudat_env.dep_vars_array[:, 10])[:subset:10]
+			longitude = np.rad2deg(tudat_env.dep_vars_array[:, 11])[:subset:10] + np.rad2deg(sat.OMEGA)
+		
+		FoV_lat = 8.68 / 2
+		FoV_lon = 8.68 / 2
+		print(len(latitude))
+		
+		coords = np.array([[0, 0]])
+		
+		for lat, lon in zip(latitude, longitude):
+			lat = round(lat, 1)
+			lon = round(lon, 1)
+			latitude_range = np.linspace(lat-FoV_lat, lat+FoV_lat, 25)
+			longitude_range = np.linspace(lon - FoV_lon, lon + FoV_lon, 25)
+			
+			latitude_range = np.atleast_2d(latitude_range).T
+			longitude_range = np.atleast_2d(longitude_range).T
+			
+			arr = np.append(longitude_range, latitude_range, axis=1)
+			coords = np.append(coords, arr, axis=0)
+		
+		plt.scatter(coords[:, 0], coords[:, 1], s=.5)
+		plt.scatter(longitude, latitude, s=1)
+	
+	plt.show()
+	
 
 if __name__ == "__main__":
 	print_orbital_parameters()
+	N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu = determine_orbit()
+	SATS = satellite.create_sats(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu)
+	
+	for sat in SATS:
+		satref = 25
+		sat.reference_area = 6.59 + satref
+		sat.drag_coefficient = 1.17
+		sat.radiation_reference_area = 19.76 + satref
+		sat.solar_pressure_coefficient = 1.2
+		sat.rho = 1.5645e-13
+		sat.mass = 1254
+		
+	tudat_env = tudat.set_up_and_run_tudat(SATS)
+	coverage(tudat_env, SATS)
+	
 	determine_orbit()
