@@ -2,69 +2,214 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 import constants as const
+import tudat
+import os
+import pickle
+import csv
 
 
 class Satellite:
-	def __init__(self, r_p=const.R_E + 160e3, i=0, e=0,
-	             FoV_hor=np.deg2rad(20), FoV_ver=np.deg2rad(10), mass=1000, frontal_area=2):
-		self.T = None  # Orbital period [s]
-		self.r_p = r_p  # Peri-centre radius [m]
-		self.e = e  # Eccentricity [-]
-		self.a = None  # Semi-major axis [m]
-		self.r_a = None  # Apo-centre radius [m]
-		self.i = i  # Inclination angle [Rad]
-		self.DeltaL1 = None
-		self.DeltaL2 = None
-		self.DeltaL = None
+	def __init__(self):
 		
-		self.calc_orbital_parameters()
+		## Orbital parameters
+		self.N_orbits: int = None
+		""""Number of distinct types of orbits, changes in true anomaly and ascending node [-]"""
+		self.N_sat: int = None
+		"""Number of satellites in the constellation [-]"""
+		self.j: int = None
+		"""Number of orbits before the ground track is repeated [-]"""
+		self.k: int = None
+		"""Number of days before the ground track is repeated [Day]"""
+		self.T: float = None
+		"""Orbital period [s]"""
+		self.r_p: float = None
+		"""Peri-centre radius [m]"""
+		self.e: float = None
+		"""Eccentricity [-]"""
+		self.a: float = None
+		"""Semi-major axis [m]"""
+		self.r_a: float = None
+		"""Apo-centre radius [m]"""
+		self.i: float = None
+		"""Inclination angle [Rad]"""
+		self.DeltaL: float = None
+		"""Total shift in longitude per orbit [rad]"""
+		self.DeltaL1: float = None
+		"""Shift in longitude per orbit due to rotation of the Earth [Rad]"""
+		self.DeltaL2: float = None
+		"""Shift in longitude per orbit due to J2 effect [Rad]"""
+		self.omega: float = None
+		"""Argument of the peri-centre [Rad] NEEDS REVISION"""
+		self.OMEGA: float = None
+		"""Longitude of the ascending node [Rad]"""
+		self.nu: float = None
+		"""True anomaly, angle from peri-centre of where the sat is now (starting point) [Rad]"""
+		self.eclipse_time: float = None
+		"""Maximum eclipse time during orbit [s]"""
+		self.rho: float = None
+		""""The mean density of the orbit [kg/m^3]"""
+		## Payload characteristics
+		self.FoV_PL = None  # FoV of the payload [Rad]
 		
-		self.FoV_hor = FoV_hor  # Field of view in horizontal direction [Rad]
-		self.FoV_ver = FoV_ver  # Field of view in vertical direction [Rad]
-		self.mass = mass  # Satellite mass [kg]
-		self.frontal_area = frontal_area  # Frontal area [m^2]
-	
-	def calc_e_from_DeltaL(self, DeltaL_required):
-		def func_e_pos(e):
-			func = -4 * np.pi ** 2 * np.sqrt((self.r_p ** 3 / ((1 - e) ** 3)) / const.mu_E) / const.T_E - \
-			       (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(self.i) /
-			        (self.r_p ** 2 / ((1 - e) ** 2 * (1 - e ** 2) ** 2))) + DeltaL_required
-			return func
+		## Mission Requirements
+		self.Temporal_Res = None  # Temporal resolution of the mission [days]
 		
-		def func_e_neg(e):
-			func = -4 * np.pi ** 2 * np.sqrt((self.r_p ** 3 / ((1 - e) ** 3)) / const.mu_E) / const.T_E - \
-			       (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(self.i) /
-			        (self.r_p ** 2 / ((1 - e) ** 2 * (1 - e ** 2) ** 2))) - DeltaL_required
-			return func
-		
-		self.DeltaL = DeltaL_required
-		
-		e = fsolve(func_e_pos, 0)[0]
-		print(e)
-		
-		if e < 0:
-			e = fsolve(func_e_neg, 0)[0]
-			print(e)
-		
-		if e < 0 or e >= 1:
-			print("Not realistic e:", e)
+		self.mass = None  # Satellite mass [kg]
+		self.frontal_area = None  # Frontal area [m^2]
+
+		## Satellite Characteristics
+		self.name: str = None
+		"""Name of the satellite"""
+		self.reference_area: float = None
+		"""Reference area of satellite's cross-section [m^2]"""
+		self.drag_coefficient: float = None
+		"""Drag coefficient of the satellite [-]"""
+		self.radiation_reference_area: float = None
+		"""Reference area of half the satellite's total area [m^2]"""
+		self.solar_pressure_coefficient: float = None
+		"""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
+		self.lifetime: float = None
+		"""Lifetime of the satellite [y]"""
+		self.reflectivity: float = None
+		""""Reflectivity of the satellite"""
+
+	def save_sat(self, name: str = '', verbose=False) -> None:
+		"""
+		:param name: Name of file to be saved, defaults to 'name' instance attribute of object
+		:param verbose: Bool for printing confirmation/errors
+		"""
+
+		# set default name
+		if name == '':
+			name = self.name
+
+		# set path to save folder
+		cwd = os.getcwd().replace('\\', '/')
+		dir_list = cwd.split('/')
+		try:
+			dir_depth = dir_list[::-1].index("DSE_28")
+		except ValueError:
+			if verbose:
+				print('unable to find DSE_28 parent directory')
+			return
+
+		filepath = dir_depth * '../' + 'satellites'
+		if os.path.isdir(filepath):
+			pass
 		else:
-			self.e = e
-			self.calc_orbital_parameters()
-	
-	def calc_orbital_parameters(self):
-		self.a = self.r_p / (1 - self.e)
-		self.r_a = self.a * (1 + self.e)
-		
-		self.T = 2 * np.pi * np.sqrt(self.a ** 3 / const.mu_E)
-		
-		self.DeltaL1 = -2 * np.pi * self.T / const.T_E
-		self.DeltaL2 = (- 3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(self.i)) / (self.a ** 2 * (1 - self.e ** 2) ** 2)
-		self.DeltaL = self.DeltaL1 + self.DeltaL2
-		
+			os.mkdir(filepath)
+		filepath += '/' + str(name)
+
+		# save satellites
+		with open(filepath + '.pkl', 'wb') as file:
+			pickle.dump(self, file)
+
+		with open(filepath + '.csv', 'w') as csv_file:
+			writer = csv.writer(csv_file)
+			for key, value in self.__dict__.items():
+				writer.writerow([key, value])
+
+		if verbose:
+			print(f"Saved: {name}")
+		return
+
+
+def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> list | None:
+	"""
+	:param sat_names: File names to be loaded (individual or list), integers automatically preceded with "Sat"
+	:param verbose: Toggle for printing confirmation/errors
+	:return: Satellite class object OR list of multiple
+	"""
+
+	# format name input
+	if type(sat_names) == int:
+		sat_names = ['Sat' + str(sat_names) + '.pkl']
+	elif type(sat_names) == str:
+		if sat_names[-4:] == '.pkl':
+			sat_names = [sat_names]
+		else:
+			sat_names = [sat_names + '.pkl']
+	elif type(sat_names) == list:
+		for n, name in enumerate(sat_names):
+			if type(name) == int:
+				sat_names[n] = 'Sat' + str(name) + '.pkl'
+	else:
+		if verbose:
+			print("Unknown sat_names input, load failed")
+		return
+
+	# set path to save folder
+	cwd = os.getcwd().replace('\\', '/')  # unix compatibility
+	dir_list = cwd.split('/')  # split directories
+	try:
+		dir_depth = dir_list[::-1].index("DSE_28")  # subdirectories away from "DSE_28"
+	except ValueError:
+		if verbose:
+			print('unable to find DSE_28 parent directory')
+		return
+
+	filepath = dir_depth * '../' + 'satellites/'
+
+	# load satellites
+	sats = []
+	for sat_name in sat_names:
+		try:
+			with open(filepath + str(sat_name), 'rb') as file:
+				sats.append(pickle.load(file))
+		except (FileNotFoundError, EOFError):
+			if verbose:
+				print(f"Could not load: {sat_name}")
+			sats.append(None)
+			sat_names.remove(sat_name)
+	if verbose:
+		print(f"Loaded: {', '.join(map(str, sat_names))}")
+	if len(sats) == 1:
+		sats = sats[0]
+
+	return sats
+
+
+def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float, DeltaL1: float, DeltaL2: float,
+                a: float, e: float, i: float, r_p: float, r_a: float,
+                T: float, OMEGA: np.ndarray, omega: float, nu: np.ndarray):
+	SATS = np.empty(3, dtype="object")
+	for n in range(N_sat):
+		sat = Satellite()
+		sat.N_orbits = N_orbits
+		sat.N_sat = N_sat
+		sat.j = j
+		sat.k = k
+		sat.DeltaL = DeltaL
+		sat.DeltaL1 = DeltaL1
+		sat.DeltaL2 = DeltaL2
+		sat.a = a
+		sat.e = e
+		sat.i = i
+		sat.r_p = r_p
+		sat.r_a = r_a
+		sat.T = T
+		sat.OMEGA = OMEGA[n]
+		sat.omega = omega
+		sat.nu = nu[n]
+		sat.name = f"Sat{n+1}"
+		SATS[n] = sat
+
+	return SATS
+
 
 if __name__ == "__main__":
-	Sat1 = Satellite(const.R_E + 160e3, np.deg2rad(70))
-	print(Sat1.__dict__)
-	Sat1.calc_e_from_DeltaL(np.deg2rad(-23))
-	print(Sat1.__dict__)
+	pass
+	## tudat
+	# Sat1.tudat_env = tudat.tudat_environment()
+	# Sat1.tudat_env.create_sat(Sat1, "Sat1")
+	# Sat1.tudat_env.set_up_aerodynamics("Sat1")
+	# Sat1.tudat_env.set_up_solar_pressure("Sat1")
+	# Sat1.tudat_env.propagation_setup(["Sat1"])
+	# Sat1.tudat_env.set_up_acceleration(["Sat1"])
+	# Sat1.tudat_env.set_up_initial_states(["Sat1"])
+	# Sat1.tudat_env.set_initial_state(Sat1, "Sat1", ["Sat1"])
+	# Sat1.tudat_env.finalise_initial_states()
+	# Sat1.tudat_env.define_vars_to_store("Sat1")
+	# Sat1.tudat_env.define_propagator_settings()
+	# Sat1.tudat_env.simulate()
+	# Sat1.tudat_env.plot_ground_track()
