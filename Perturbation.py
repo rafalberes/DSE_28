@@ -69,10 +69,8 @@ class Perturbations:
     def OrbitMaintenance(self,a,e,lifetime):
         deltavdrag = self.DeltaVDay
         deltaOMEGA = self.OMEGAdotsun + self.OMEGAdotsun + self.OMEGAdotj2
-
-        deltaOMEGA = self.OMEGAdotsun + self.OMEGAdotmoon + self.OMEGAdotj2
         deltaomega = self.omegadotsun + self.omegadotmoon + self.omegadotj2
-        omega = deltaomega * 365*7
+        omega = deltaomega * 365* lifetime
         print(omega)
         DeltaVomega = 2* np.sqrt(const.mu_E/(a*(1-e**2)))*np.sin(np.deg2rad(deltaomega/2))
         V = np.sqrt(const.mu_E / a)
@@ -81,10 +79,11 @@ class Perturbations:
         deltavdrag = deltavdrag*365*lifetime
         print("DeltaV to maintain altitude due to drag:", deltavdrag)
         frac = self.solaracceleration/self.dragacceleration
+        print("Fraction solar/drag:", frac*100, "[%]")
         totaldeltaV = (1+frac)*deltavdrag
-        print("DeltaV to maintain altitude:", totaldeltaV)
+        print("Total DeltaV to maintain altitude:", totaldeltaV)
         deltaa = self.DeltaaDay *(1+frac)
-        print("Semi-major axis reduction:",deltaa )
+        print("Total semi-major axis reduction:",deltaa )
 
 
 if __name__ == "__main__":
@@ -101,11 +100,12 @@ if __name__ == "__main__":
     print(Sat1.radiation_reference_area)
     Sat1.solar_pressure_coefficient = 1.2
     Sat1.reflectivity = 0.4  # r = 0  for absorption; r = I  for specular and r := 0.4 for diffuse reflection. from SMAD
-    Sat1.lifetime = 7
+    Sat1.lifetime = 7.5
     meanrho550 = 2.14e-13
     meanrho600 = 9.89e-14
     Sat1.rho = np.average([meanrho600, meanrho550])
-    Sat1.mass = 1254
+    Sat1.rho = 1.188e-12 #Worst case density due to solar maximum
+    Sat1.mass = 1254.36
     print(Sat1.__dict__)
     satlist = [Sat1]
     Perb = Perturbations(satlist)
