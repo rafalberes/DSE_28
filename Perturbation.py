@@ -26,7 +26,8 @@ class Perturbations:
         tudat_env.define_vars_to_store(name)
         tudat_env.define_propagator_settings()
         tudat_env.simulate()
-        tudat_env.plot_ground_track(show_plot=True)
+        subset = tudat_env.create_plot(hours=None)
+        tudat_env.plot_ground_track(sat_objects=[sat], show_plot=True, subset=subset)
 
     def ThirdBody(self,i,j): #Third body perturbations from Sun and Moon with error of O(e^2)
         self.OMEGAdotmoon = -0.00338 * np.cos(i)/j
