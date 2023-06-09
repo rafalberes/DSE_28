@@ -63,11 +63,15 @@ class Satellite:
 		self.reference_area: float = None
 		"""Reference area of satellite's cross-section [m^2]"""
 		self.drag_coefficient: float = None
-		""""Drag coefficient of the satellite [-]"""
+		"""Drag coefficient of the satellite [-]"""
 		self.radiation_reference_area: float = None
-		""""Reference area of half the satellite's total area [m^2]"""
-		self.solar_pressure_coefficient = None
-		""""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
+		"""Reference area of half the satellite's total area [m^2]"""
+		self.solar_pressure_coefficient: float = None
+		"""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
+		self.lifetime: float = None
+		"""Lifetime of the satellite [y]"""
+		self.reflectivity: float = None
+		""""Reflectivity of the satellite"""
 
 	def save_sat(self, name: str = '', verbose=False) -> None:
 		"""

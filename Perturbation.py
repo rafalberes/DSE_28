@@ -61,14 +61,29 @@ class Perturbations:
         self.DeltaVDay = DeltaVRev*j
         print("Drag effect on Velocity=", self.DeltaVDay, "DeltaV/day")
 
-    def SolarRadiation(self, reference_area, mass):
-        self.solaracceleration = -4.5e-8*reference_area/mass
+    def SolarRadiation(self, reference_area, mass,r):
+        self.solaracceleration = -4.5e-6*(1+r)*reference_area/mass
         print("Magnitude of acceleration due to solar radiation=", self.solaracceleration, "m/s^2")
 
-    def OrbitMaintenance(self):
+    def OrbitMaintenance(self,a,e,lifetime):
         deltavdrag = self.DeltaVDay
         deltaOMEGA = self.OMEGAdotsun + self.OMEGAdotsun + self.OMEGAdotj2
 
+        deltaOMEGA = self.OMEGAdotsun + self.OMEGAdotmoon + self.OMEGAdotj2
+        deltaomega = self.omegadotsun + self.omegadotmoon + self.omegadotj2
+        omega = deltaomega * 365*7
+        print(omega)
+        DeltaVomega = 2* np.sqrt(const.mu_E/(a*(1-e**2)))*np.sin(np.deg2rad(deltaomega/2))
+        V = np.sqrt(const.mu_E / a)
+        DeltaVomega2 = np.sqrt(2*V**2*(1-np.cos(np.deg2rad(deltaomega)))) ##Cross-check the formula
+        print("DeltaV to maintain omega:",DeltaVomega)
+        deltavdrag = deltavdrag*365*lifetime
+        print("DeltaV to maintain altitude due to drag:", deltavdrag)
+        frac = self.solaracceleration/self.dragacceleration
+        totaldeltaV = (1+frac)*deltavdrag
+        print("DeltaV to maintain altitude:", totaldeltaV)
+        deltaa = self.DeltaaDay *(1+frac)
+        print("Semi-major axis reduction:",deltaa )
 
 
 if __name__ == "__main__":
@@ -78,18 +93,24 @@ if __name__ == "__main__":
     #                               radiation_reference_area=19.76, solar_pressure_coefficient=1.2, a = 7253137, rho=3.7045e-13)
     Sats = satellite.load_sat(1)
     Sat1 = Sats
-    satref = 25
-    Sat1.reference_area = 6.59 + satref
-    Sat1.drag_coefficient = 1.17
-    Sat1.radiation_reference_area = 19.76 + satref
+    satref = 22  # Initial maximum estimate of solar area
+    Sat1.reference_area = const.Struc_H * const.Struc_W + satref
+    Sat1.drag_coefficient = 4  # Box with arrays average drag coefficient from SMAD
+    Sat1.radiation_reference_area = const.Struc_W*const.Struc_L + const.Struc_H*const.Struc_L + const.Struc_H * const.Struc_W + satref
+    print(Sat1.radiation_reference_area)
     Sat1.solar_pressure_coefficient = 1.2
-    Sat1.rho = 1.5645e-13
+    Sat1.reflectivity = 0.4  # r = 0  for absorption; r = I  for specular and r := 0.4 for diffuse reflection. from SMAD
+    Sat1.lifetime = 7
+    meanrho550 = 2.14e-13
+    meanrho600 = 9.89e-14
+    Sat1.rho = np.average([meanrho600, meanrho550])
     Sat1.mass = 1254
     print(Sat1.__dict__)
     satlist = [Sat1]
     Perb = Perturbations(satlist)
-    Perb.Groundtrack(Sat1,Sat1.name, Sat1.reference_area, Sat1.drag_coefficient, Sat1.radiation_reference_area, Sat1.solar_pressure_coefficient)
+    #Perb.Groundtrack(Sat1,Sat1.name, Sat1.reference_area, Sat1.drag_coefficient, Sat1.radiation_reference_area, Sat1.solar_pressure_coefficient)
     Perb.ThirdBody(Sat1.i,Sat1.j)
     Perb.NonSphericalEarth(Sat1.a, Sat1.i, Sat1.e)
     Perb.Aerodynamics(Sat1.drag_coefficient, Sat1.reference_area, Sat1.mass, Sat1.a, Sat1.rho, Sat1.j)
-    Perb.SolarRadiation(Sat1.reference_area, Sat1.mass)
+    Perb.SolarRadiation(Sat1.reference_area, Sat1.mass, Sat1.reflectivity)
+    Perb.OrbitMaintenance(Sat1.a, Sat1.e, Sat1.lifetime)
