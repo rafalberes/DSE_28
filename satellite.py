@@ -1,8 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import fsolve
-import constants as const
-import tudat
 import os
 import pickle
 import csv
@@ -12,65 +8,96 @@ class Satellite:
 	def __init__(self):
 		
 		## Orbital parameters
-		self.N_orbits: int = None
+		self.N_orbits: int | None = None
 		""""Number of distinct types of orbits, changes in true anomaly and ascending node [-]"""
-		self.N_sat: int = None
+		self.N_sat: int | None = None
 		"""Number of satellites in the constellation [-]"""
-		self.j: int = None
+		self.j: int | None = None
 		"""Number of orbits before the ground track is repeated [-]"""
-		self.k: int = None
+		self.k: int | None = None
 		"""Number of days before the ground track is repeated [Day]"""
-		self.T: float = None
+		self.T: float | None = None
 		"""Orbital period [s]"""
-		self.r_p: float = None
+		self.r_p: float | None = None
 		"""Peri-centre radius [m]"""
-		self.e: float = None
+		self.e: float | None = None
 		"""Eccentricity [-]"""
-		self.a: float = None
+		self.a: float | None = None
 		"""Semi-major axis [m]"""
-		self.r_a: float = None
+		self.r_a: float | None = None
 		"""Apo-centre radius [m]"""
-		self.i: float = None
+		self.i: float | None = None
 		"""Inclination angle [Rad]"""
-		self.DeltaL: float = None
+		self.DeltaL: float | None = None
 		"""Total shift in longitude per orbit [rad]"""
-		self.DeltaL1: float = None
+		self.DeltaL1: float | None = None
 		"""Shift in longitude per orbit due to rotation of the Earth [Rad]"""
-		self.DeltaL2: float = None
+		self.DeltaL2: float | None = None
 		"""Shift in longitude per orbit due to J2 effect [Rad]"""
-		self.omega: float = None
+		self.omega: float | None = None
 		"""Argument of the peri-centre [Rad] NEEDS REVISION"""
-		self.OMEGA: float = None
+		self.OMEGA: float | None = None
 		"""Longitude of the ascending node [Rad]"""
-		self.nu: float = None
+		self.nu: float | None = None
 		"""True anomaly, angle from peri-centre of where the sat is now (starting point) [Rad]"""
-		self.eclipse_time: float = None
+		self.eclipse_time: float | None = None
 		"""Maximum eclipse time during orbit [s]"""
-		self.rho: float = None
+		self.rho: float | None = None
 		""""The mean density of the orbit [kg/m^3]"""
+		
+		### DeltaV requirements
+		self.DeltaV_insertion: float = 0
+		"""DeltaV required in the mission for orbit insertion [m/s]"""
+		self.DeltaV_maintenance: float | None = None
+		"""DeltaV required per orbit maintenance procedure [m/s]"""
+		self.DeltaH_desaturation: float | None = None
+		"""Delta angular momentum required per desaturation of reaction wheels [Nms]"""
+		self.DeltaV_deorbit: float | None = None
+		"""DeltaV required for the de-orbit manoeuvre [m/s]"""
+		self.freq_desaturation: float | None = None
+		"""Frequency of desaturation [/day]"""
+		self.freq_maintenance: float | None = None
+		"""Frequency of orbit maintenance [/day]"""
+		
+		### Propulsion
+		self.I_sp_insertion: float = 285  # [s]
+		"""Specific impulse of insertion engine [s]"""
+		self.I_sp_desaturation: float = 285  # [s]
+		"""Specific impulse of desaturation engine [s]"""
+		self.I_sp_maintenance: float = 285  # [s]
+		"""Specific impulse of maintenance engine [s]"""
+		self.I_sp_deorbit: float = 285  # [s]
+		"""Specific impulse of deorbit engine [s]"""
+		
 		## Payload characteristics
 		self.FoV_PL = None  # FoV of the payload [Rad]
 		
 		## Mission Requirements
 		self.Temporal_Res = None  # Temporal resolution of the mission [days]
 		
-		self.mass = None  # Satellite mass [kg]
+		self.dry_mass = 1254  # Satellite dry_mass [kg]
 		self.frontal_area = None  # Frontal area [m^2]
 
 		## Satellite Characteristics
-		self.name: str = None
+		self.name: str | None = None
 		"""Name of the satellite"""
-		self.reference_area: float = None
+		self.reference_area: float | None = None
 		"""Reference area of satellite's cross-section [m^2]"""
-		self.drag_coefficient: float = None
+		self.drag_coefficient: float | None = None
+		""""Drag coefficient of the satellite [-]"""
+		self.radiation_reference_area: float | None = None
+		""""Reference area of half the satellite's total area [m^2]"""
+		self.solar_pressure_coefficient = None
+		""""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
+		self.drag_coefficient: float | None = None
 		"""Drag coefficient of the satellite [-]"""
-		self.radiation_reference_area: float = None
+		self.radiation_reference_area: float | None = None
 		"""Reference area of half the satellite's total area [m^2]"""
-		self.solar_pressure_coefficient: float = None
+		self.solar_pressure_coefficient: float | None = None
 		"""Solar pressure coefficient indicating to which scale radiation is absorbed or reflected [-]"""
-		self.lifetime: float = None
+		self.lifetime: float | None = 7.5
 		"""Lifetime of the satellite [y]"""
-		self.reflectivity: float = None
+		self.reflectivity: float | None = None
 		""""Reflectivity of the satellite"""
 
 	def save_sat(self, name: str = '', verbose=False) -> None:
@@ -114,7 +141,7 @@ class Satellite:
 		return
 
 
-def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> list | None:
+def load_sat(sat_names: int | str | list[int | str], verbose: bool = False):
 	"""
 	:param sat_names: File names to be loaded (individual or list), integers automatically preceded with "Sat"
 	:param verbose: Toggle for printing confirmation/errors
@@ -169,28 +196,28 @@ def load_sat(sat_names: int | str | list[int | str], verbose: bool = False) -> l
 	return sats
 
 
-def create_sats(N_orbits: int, N_sat: int, j: int, k: int, DeltaL: float, DeltaL1: float, DeltaL2: float,
-                a: float, e: float, i: float, r_p: float, r_a: float,
-                T: float, OMEGA: np.ndarray, omega: float, nu: np.ndarray):
+def create_sats(Orbital_parameters: dict):
 	SATS = np.empty(3, dtype="object")
-	for n in range(N_sat):
+	for n in range(Orbital_parameters["N_sat"]):
 		sat = Satellite()
-		sat.N_orbits = N_orbits
-		sat.N_sat = N_sat
-		sat.j = j
-		sat.k = k
-		sat.DeltaL = DeltaL
-		sat.DeltaL1 = DeltaL1
-		sat.DeltaL2 = DeltaL2
-		sat.a = a
-		sat.e = e
-		sat.i = i
-		sat.r_p = r_p
-		sat.r_a = r_a
-		sat.T = T
-		sat.OMEGA = OMEGA[n]
-		sat.omega = omega
-		sat.nu = nu[n]
+		sat.N_orbits = Orbital_parameters["N_orbits"]
+		sat.N_sat = Orbital_parameters["N_sat"]
+		sat.j = Orbital_parameters["j"]
+		sat.k = Orbital_parameters["k"]
+		sat.DeltaL = Orbital_parameters["DeltaL"]
+		sat.DeltaL1 = Orbital_parameters["DeltaL1"]
+		sat.DeltaL2 = Orbital_parameters["DeltaL2"]
+		sat.a = Orbital_parameters["a"]
+		sat.e = Orbital_parameters["e"]
+		sat.i = Orbital_parameters["i"]
+		sat.r_p = Orbital_parameters["r_p"]
+		sat.r_a = Orbital_parameters["r_a"]
+		sat.T = Orbital_parameters["T"]
+		sat.OMEGA = Orbital_parameters["OMEGA"][n]
+		sat.omega = Orbital_parameters["omega"]
+		sat.nu = Orbital_parameters["nu"][n]
+		sat.DeltaV_insertion = Orbital_parameters["DeltaV_insertion"]
+		sat.DeltaV_deorbit = Orbital_parameters["DeltaV_deorbit"]
 		sat.name = f"Sat{n+1}"
 		SATS[n] = sat
 

@@ -60,7 +60,7 @@ class tudat_environment:
     def create_sat(self, sat_object, name: str):
         # Create vehicle objects.
         self.bodies.create_empty_body(name)
-        self.bodies.get(name).mass = sat_object.mass
+        self.bodies.get(name).dry_mass = sat_object.dry_mass
 
     def set_up_aerodynamics(self,
                             sat: str,
