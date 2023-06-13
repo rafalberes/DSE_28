@@ -101,15 +101,23 @@ class Perturbations:
         print("Every", self.Tsep, "days orbit maintenance is required with a deltaV of:", self.deltaVsep)
 
     def Maintenanceplots(self,a):
-        days = np.arange(0,25,1)
-        print(a)
-        semimajor = a + self.deltaadot*days - const.R_E
+        hours = np.arange(0,8*24,1)
+        deltaadot = self.deltaadot / 24
+        semimajor = a + deltaadot*hours - const.R_E
         limit = a - self.deltaa - const.R_E
-        print(limit)
         for i in range(len(semimajor)):
             if semimajor[i] < limit:
-                semimajor[i] + self.deltaa
-        print(semimajor)
+                semimajor[i:] = semimajor[i:] + self.deltaa*2
+        semimajor = semimajor*1e-3
+        aline = [(a-const.R_E)*1e-3,(a-const.R_E)*1e-3]
+        tline = [0, hours[-1]]
+        plt.plot(hours,semimajor,c="blue", label= "Satellite")
+        plt.plot(tline, aline, c="red", label="Target Semi-Major Axis")
+        plt.title("Semi-major axis over time [h]")
+        plt.xlabel("Time [h]")
+        plt.ylabel("Semi-major axis altitude [m]")
+        plt.legend()
+        plt.show()
 
 
 
