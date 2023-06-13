@@ -18,10 +18,10 @@ eclipse_time,2143.8457936442906
 rho,
 DeltaV_insertion,1061.8740715230308
 DeltaV_maintenance,3.75
-DeltaH_desaturation,93
-DeltaV_deorbit,179.108
+DeltaH_desaturation,94.35
+DeltaV_deorbit,97.5406708847795
 freq_desaturation,0.5
-freq_maintenance,0.011904761904761904
+freq_maintenance,0.0111731843575419
 I_sp_insertion,285
 I_sp_desaturation,285
 I_sp_maintenance,285

@@ -6,6 +6,7 @@ mu_E = 3.986004418e14   # [m^3/s^2]
 T_E = 23 * 60 * 60 + 56 * 60 + 4.0916    # [s] universe today <- source
 AU = 149_597_870.7e3    # [m] https://www.britannica.com/science/astronomical-unit
 g_0 = 9.80665           # [m/s]
+R = 8.31446261815324    # [J/mol K] https://www.britannica.com/science/decay-constant
 
 ## Conversions
 m_to_deg = 1 / 111_139  # Conversion to find longitude/latitude degrees from surface distance https://sciencing.com/convert-latitude-longtitude-feet-2724.html

@@ -18,10 +18,10 @@ eclipse.calc_eclipse_times(SATS)
 
 ## Propulsion calculations
 # Preliminary values required
-SATS[0].DeltaH_desaturation = 3 * 31  # [Nms]
+SATS[0].DeltaH_desaturation = 3 * 31.45  # [Nms]
 SATS[0].DeltaV_maintenance = 3.75  # [m/s]
 SATS[0].freq_desaturation = 1 / 2  # [/day]
-SATS[0].freq_maintenance = 1 / 84  # [/day]
+SATS[0].freq_maintenance = 1 / 89.5  # [/day]
 propulsion.determine_propellant_mass(SATS[0].dry_mass, SATS[0].lifetime, SATS[0])
 
 ## Save satellite objects

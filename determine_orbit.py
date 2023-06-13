@@ -52,11 +52,13 @@ def determine_orbit():
 	DeltaL1 = -4 * np.pi ** 2 * np.sqrt(a ** 3 / const.mu_E) / const.T_E
 	DeltaL2 = - (3 * np.pi * const.J_2 * const.R_E ** 2 * np.cos(i)) / (a ** 2 * (1 - e ** 2) ** 2)
 	
-	if __name__ == "__main__":
-		print_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu)
-	
 	DeltaV_insertion = calc_DeltaV_insertion(e, a, np.pi, DeltaL/N_orbits)
 	DeltaV_deorbit = 179.108
+	h_p_deorbit = 220e3  # [m]
+	DeltaV_deorbit = calc_DeltaV_deorbit(e, a, h_p_deorbit, r_a)
+	
+	if __name__ == "__main__":
+		print_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu, DeltaV_insertion, DeltaV_deorbit)
 	
 	Orbital_parameters = {
 		"N_orbits": N_orbits,
@@ -83,7 +85,7 @@ def determine_orbit():
 
 
 def calc_DeltaV_insertion(e: float, a: float, nu: float = np.deg2rad(180), Delta_OMEGA: float = 8.57):
-	v = np.sqrt(const.mu_E * ((2 + 2 * e * np.cos(nu)) / (a * (1 - e ** 2)) - 1 / a))
+	v = calc_velocity(e, nu, a)
 	DeltaV_simpl = 2 * v * np.sin(Delta_OMEGA / 2)
 
 	if __name__ == "__main__":
@@ -97,7 +99,19 @@ def calc_DeltaV_insertion(e: float, a: float, nu: float = np.deg2rad(180), Delta
 	return DeltaV_simpl
 
 
-def print_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu):
+def calc_DeltaV_deorbit(e: float, a: float, h_p_deorbit: float, r_a: float):
+	a2 = (const.R_E + h_p_deorbit + r_a) / 2
+	e2 = 1 - (const.R_E + h_p_deorbit) / a2
+	
+	v_r_a = calc_velocity(e, np.pi, a)
+	v_r_a2 = calc_velocity(e2, np.pi, a2)
+	
+	DeltaV_slides = v_r_a - v_r_a2
+	
+	return DeltaV_slides
+
+
+def print_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a, e, i, r_p, r_a, T, OMEGA, omega, nu, DeltaV_insertion, DeltaV_deorbit):
 	r_40_lat = (a * (1 - e ** 2)) / (1 + e * np.cos(np.deg2rad(50)))
 	r = 800e3 + const.R_E
 	theta_r = np.arccos((a * (1 - e ** 2) / r - 1) / e)
@@ -126,6 +140,9 @@ def print_orbital_parameters(N_orbits, N_sat, j, k, DeltaL, DeltaL1, DeltaL2, a,
 		f"Altitude at 40 deg latitude     : {r_40_lat - const.R_E} [m]\n"
 		f"True anomaly where alt is 800 km: {np.rad2deg(theta_r)} [deg]\n"
 		f"Latitude where alt is 800 km    : {90 - np.rad2deg(theta_r)} [deg]\n"
+		f"\n"
+		f"DeltaV insertion                : {DeltaV_insertion} [m/s]\n"
+		f"DeltaV de-orbit                 : {DeltaV_deorbit} [m/s]\n"
 	)
 
 
@@ -163,6 +180,10 @@ def coverage(tudat_env, sats):
 		plt.scatter(longitude, latitude, s=1)
 	
 	plt.show()
+
+
+def calc_velocity(e, nu, a):
+	return np.sqrt(const.mu_E * ((2 + 2 * e * np.cos(nu)) / (a * (1 - e ** 2)) - 1 / a))
 
 
 if __name__ == "__main__":
