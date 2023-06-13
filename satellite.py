@@ -77,7 +77,8 @@ class Satellite:
 		
 		self.dry_mass = 1254  # Satellite dry_mass [kg]
 		self.frontal_area = None  # Frontal area [m^2]
-
+		self.Ld: float = None
+		"""The total displacement allowed [m]"""
 		## Satellite Characteristics
 		self.name: str | None = None
 		"""Name of the satellite"""
