@@ -17,9 +17,9 @@ FoV_PL = np.deg2rad(80)            # Field of view of the chosen payload [Rad]
 Temporal_Res = 1                  # How often measurements are performed [day]
 
 ## Structure (Initial Estimates) - assuming a box shape and evenly distributed dry_mass
-Struc_L = 4.2                       # Structure Length (m)
-Struc_W = 2.0                       # Structure Width (m)
-Struc_H = 2.0                       # Structure Height (m)
+Struc_L = 3.55                        # Undeployed Structure Length (m)
+Struc_W = 1.8                       # Structure Width (m)
+Struc_H = 1.55                       # Structure Height (m)
 Struc_Ixx = 3750                    # Structure MMOI through lateral axis (kgm^2)
 Struc_Iyy = 3750                    # Structure MMOI through other lateral axis (kgm^2)
 Struc_Izz = 2535                    # Structure MMOI through longitudinal axis (kgm^2)

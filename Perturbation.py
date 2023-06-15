@@ -97,11 +97,12 @@ class Perturbations:
         self.deltaa  =np.sqrt(-4*a*self.deltaadot*Ld/(3*(const.OMEGA_e-deltaOMEGA)*const.R_E))
         print("Every decrease of a=", self.deltaa, "orbit maintenance needs to be performed for payload req")
         self.Tsep = np.sqrt((-16*a*Ld)/(3*(const.OMEGA_e-deltaOMEGA)*const.R_E*self.deltaadot))
+        self.Tsep = -2*self.deltaa/self.deltaadot
         self.deltaVsep = self.totaldeltaV/(365*lifetime/self.Tsep)
         print("Every", self.Tsep, "days orbit maintenance is required with a deltaV of:", self.deltaVsep)
 
     def Maintenanceplots(self,a):
-        hours = np.arange(0,8*24,1)
+        hours = np.arange(0,10*24,1)
         deltaadot = self.deltaadot / 24
         semimajor = a + deltaadot*hours - const.R_E
         limit = a - self.deltaa - const.R_E
@@ -113,10 +114,10 @@ class Perturbations:
         tline = [0, hours[-1]]
         plt.plot(hours,semimajor,c="blue", label= "Satellite")
         plt.plot(tline, aline, c="red", label="Target Semi-Major Axis")
-        plt.title("Semi-major axis over time [h]")
-        plt.xlabel("Time [h]")
-        plt.ylabel("Semi-major axis altitude [m]")
-        plt.legend()
+        #plt.title("Semi-major axis over time [h]")
+        plt.xlabel("Time [h]", fontsize=15)
+        plt.ylabel("Semi-major axis altitude [km]", fontsize=15)
+        plt.legend(fontsize=15)
         plt.show()
 
 
@@ -129,20 +130,21 @@ if __name__ == "__main__":
     #                               radiation_reference_area=19.76, solar_pressure_coefficient=1.2, a = 7253137, rho=3.7045e-13)
     Sats = satellite.load_sat(1)
     Sat1 = Sats
-    satref = 4.5*3  # Initial maximum estimate of solar area
-    satfrontal = 4.5*0.1 #Initial width times height of the solar panels
+    satref = 3.5*2.35  # Initial maximum estimate of solar area
+    satfrontal = 3.5*0.0155 #Initial width times height of the solar panels
     Sat1.reference_area = const.Struc_H * const.Struc_W + satfrontal
-    Sat1.drag_coefficient = 4  # Box with arrays average drag coefficient from SMAD
+    print(Sat1.reference_area)
+    Sat1.drag_coefficient = 2  # Box with arrays average drag coefficient from SMAD, https://issfd.org/ISSFD_2017/paper/ISTS-2017-d-002__ISSFD-2017-002.pdf
     Sat1.radiation_reference_area = const.Struc_W*const.Struc_L + satref #+ const.Struc_H*const.Struc_L + const.Struc_H * const.Struc_W
     print(Sat1.radiation_reference_area)
-    Sat1.solar_pressure_coefficient = 1.2
-    Sat1.reflectivity = 0.64  # r = 0  for absorption; r = I  for specular and r := 0.4 for diffuse reflection. from SMAD
+    Sat1.reflectivity = 0.58  # r = 0  for absorption; r = I  for specular and r := 0.4 for diffuse reflection. from SMAD, absorb=
+    Sat1.solar_pressure_coefficient = Sat1.reflectivity + 1
     Sat1.lifetime = 7.5
     meanrho550 = 2.14e-13
     meanrho600 = 9.89e-14
     Sat1.rho = np.average([meanrho600, meanrho550])
     Sat1.rho = 1.188e-12  # Worst case density due to solar maximum
-    Sat1.mass = 1254.36
+    Sat1.mass = 1437.8
     Sat1.Ld = 500
     print(Sat1.__dict__)
     satlist = [Sat1]
@@ -154,3 +156,4 @@ if __name__ == "__main__":
     Perb.SolarRadiation(Sat1.reference_area, Sat1.mass, Sat1.reflectivity)
     Perb.OrbitMaintenance(Sat1.a, Sat1.e, Sat1.lifetime, Sat1.r_p, Sat1.Ld)
     Perb.Maintenanceplots(Sat1.a)
+    print(Sat1.e**2*100)
