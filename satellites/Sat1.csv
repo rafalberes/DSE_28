@@ -19,7 +19,7 @@ rho,
 DeltaV_insertion,1061.8740715230308
 DeltaV_maintenance,3.75
 DeltaH_desaturation,94.35
-DeltaV_deorbit,97.5406708847795
+DeltaV_deorbit,161.20866276928882
 freq_desaturation,0.5
 freq_maintenance,0.0111731843575419
 I_sp_insertion,285
@@ -30,6 +30,7 @@ FoV_PL,
 Temporal_Res,
 dry_mass,1254
 frontal_area,
+Ld,
 name,Sat1
 reference_area,
 drag_coefficient,

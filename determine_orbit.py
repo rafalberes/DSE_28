@@ -54,7 +54,7 @@ def determine_orbit():
 	
 	DeltaV_insertion = calc_DeltaV_insertion(e, a, np.pi, DeltaL/N_orbits)
 	DeltaV_deorbit = 179.108
-	h_p_deorbit = 220e3  # [m]
+	h_p_deorbit = 0 # 220e3  # [m]
 	DeltaV_deorbit = calc_DeltaV_deorbit(e, a, h_p_deorbit, r_a)
 	
 	if __name__ == "__main__":
